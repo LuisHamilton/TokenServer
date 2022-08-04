@@ -1,12 +1,12 @@
 using System.Security.Cryptography;
 using System.Text.Json;
+
 using static System.Convert;
 using static System.Text.Encoding;
 
 public class CryptoService
 {
     public int InternalKeySize { get; set; }
-
     public TimeSpan UpdatePeriod { get; set; }
 
     private string getRandomString(int seed, int size)
@@ -71,15 +71,17 @@ public class CryptoService
         var secret = GetInternalKey();
         var key = header + payload + secret;
         var expectedSignature = generateSignature(key);
+        expectedSignature = expectedSignature.Replace("=", "");
 
         if(expectedSignature != signature)
             throw new JwtInvalidSignatureException();
 
-        try{
-            var payloadBytes = FromBase64String(payload);
+        try
+        {
+            var correctPayload = paddingCorrection(payload);
+            var payloadBytes = FromBase64String(correctPayload);
             var json = ASCII.GetString(payloadBytes);
             var obj = JsonSerializer.Deserialize<T>(json);
-
             return obj;
         }
         catch
@@ -87,6 +89,20 @@ public class CryptoService
             throw new JwtInvalidPayloadException();
         }
     }
+
+    private string paddingCorrection(string base64str)
+    {
+        int len = base64str.Length;
+        int last32BytesSize = len % 4;
+        int missingEquals = 4 - last32BytesSize;
+        while (missingEquals > 0)
+        {
+            base64str += "=";
+            missingEquals--;
+        }
+        return base64str;
+    }
+
     private string getTokenFromPayload(string payload)
     {
         var header = "{ \"alg\": \"HS256\" }";

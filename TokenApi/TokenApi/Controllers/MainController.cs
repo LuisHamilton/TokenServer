@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
+// using Microsoft.AspNetCore.Authorization;
 
 namespace tokenServer.Controllers;
 
 [ApiController]
-[Route("main")]
+[Route("api")]
 public class MainController : ControllerBase
 {
     [HttpPost("connect")]
@@ -11,34 +12,38 @@ public class MainController : ControllerBase
         [FromServices]CryptoService crypto,
         [FromBody]User user)
     {
-        try{
+        try
+        {
             var token = crypto.GetToken(user);
             return new{
-                Message = "Sucess",
+                Message = "Success",
                 Token = token
             };
         }
-        catch{
-            return new{
+        catch
+        {
+            return new {
                 Message = "Fail"
             };
         }
     }
 
+    // [JwtAuthorize]
     [HttpPost("changename")]
     public object ChangeName(
         [FromServices]CryptoService crypto,
-        [FromBody]string token
+        [FromBody]ChangeNameParameters parameters
     )
     {
         User user = null;
-        try{
-            var token = paramenters.Token;
+        try
+        {
+            var token = parameters.Token;
             user = crypto.Validate<User>(token);
         }
         catch
         {
-            return new{
+            return new {
                 Message = "Invalid Token"
             };
         }
